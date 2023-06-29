@@ -7,6 +7,7 @@ import com.sparta.springlv2.entity.User;
 import com.sparta.springlv2.jwt.JwtUtil;
 import com.sparta.springlv2.repository.PostRepository;
 import com.sparta.springlv2.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -62,11 +63,68 @@ public class PostService {
 
     // Post 수정
     @Transactional
-    public PostResponseDto updatepost(Long id, PostRequestDto requestDto, HttpServletRequest request) {
+    public PostResponseDto updatePost(Long id, PostRequestDto requestDto, HttpServletRequest request) {
 
         // 토큰 체크 추가
         User user = checkToken(request);
+
+        if(user == null) {
+            throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
+        }
+
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new NullPointerException("해당 글이 존재하지 않습니다.")
+        );
+
+        if (!post.getUser().equals(user)) {
+            throw new IllegalArgumentException("글 작성자가 아닙니다.");
+        }
+
+        post.update(requestDto);
+        return new PostResponseDto(post);
     }
 
+    // Post 삭제
+    @Transactional
+    public void deletePost (Long id, HttpServletRequest request) {
+
+        // 토큰 체크 추가
+        User user = checkToken(request);
+
+        if (user == null) {
+            throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
+        }
+
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new NullPointerException("해당 글이 존재하지 않습니다.")
+        );
+
+        if (post.getUser().equals(user)) {
+            postRepository.delete(post);
+        }
+    }
+
+    public User checkToken(HttpServletRequest request){
+
+        String token = jwtUtil.resolveToken(request);
+        Claims claims;
+
+        if (token != null) {
+            if (jwtUtil.validateToken(token)) {
+                // 토큰에서 사용자 정보 가져오기
+                claims = jwtUtil.getUserInfoFromToken(token);
+            } else {
+                throw new IllegalArgumentException("Token Error");
+            }
+
+            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회
+            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
+                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
+            );
+            return user;
+
+        }
+        return null;
+    }
 
 }

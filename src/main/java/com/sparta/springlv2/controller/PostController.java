@@ -5,10 +5,14 @@ import com.sparta.springlv2.dto.PostRequestDto;
 import com.sparta.springlv2.dto.PostResponseDto;
 import com.sparta.springlv2.service.PostService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
 
 public class PostController {
 

@@ -1,15 +1,20 @@
 package com.sparta.springlv2.jwt;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpServletRequest;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+
 
 @Slf4j
 @Component
@@ -21,18 +26,18 @@ public class JwtUtil {
     // Header Authorization KEY 값
     public static final String AUTHORIZATION_HEADER = "Authorization";
     // Token 식별자, 토큰을 만들 때 앞에 붙어서 들어감
-    private static final String BEARER_PREFIX = "BEARER";
+    private static final String BEARER_PREFIX = "BEARER ";
     // 토큰 만료시간
     private static final long TOKEN_TIME = 60 * 60 * 1000L;
 
-    @Value("${jwt.secret.key") //Application.properties 에 넣어놓은 값을 가져올 수 있음
+    @Value("${jwt.secret.key}") //Application.properties 에 넣어놓은 값을 가져올 수 있음
     private String secretKey;
     private Key key; // Token을 만들 때 넣어줄 Key 값
-    private final SignatureAlgorithm signatureAlgorithm = SignatrueAlgorithm.Hs256;
+    private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
-    @PostConstruct // 처음 객체가 생성 될 때 초기화하는 함수
+    @PostConstruct
     public void init() {
-        byte[] bytes = Base64.getDecoder().decode(secretKey) // 디코드 하는 과정
+        byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(bytes);
     }
 
@@ -40,7 +45,7 @@ public class JwtUtil {
     public String resolveToken(HttpServletRequest request) { // HttpServletRequest 안에는 우리가 가져와야 할 토큰이 헤더에 들어있음
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER); // 파라미터로 가져올 값을 넣어주면 됨
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) { // 코드가 있는지, BEARER로 시작하는지 확인
-            return bearerToken.substring(7) // 앞에 7글자를 지워줌 BEARER가 6글자이고 한칸이 띄어져있기때문
+            return bearerToken.substring(7); // 앞에 7글자를 지워줌 BEARER가 6글자이고 한칸이 띄어져있기때문
         }
         return null;
     }
@@ -54,7 +59,7 @@ public class JwtUtil {
                         .setSubject(username) // 공간에 username을 넣음
                         .setExpiration(new Date(date.getTime()+TOKEN_TIME)) // 토큰을 언제까지 유효하게 할 것인지 getTime으로 현재 시간을 가지고 오며 현재 시간으로부터 우리가 설정한 시간동안 토큰 유효
                         .setIssuedAt(date) // 토큰이 언제 만들어졌는가
-                        .signWith(Key, signatureAlgorithm) // 어떤 알고리즘을 사용하여 암호화 할 것인가
+                        .signWith(key, signatureAlgorithm) // 어떤 알고리즘을 사용하여 암호화 할 것인가
                         .compact(); // String 형식 JWT 토큰으로 반환 됨
     }
 
