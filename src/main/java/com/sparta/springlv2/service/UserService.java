@@ -5,7 +5,6 @@ import com.sparta.springlv2.dto.SignupRequestDto;
 import com.sparta.springlv2.entity.User;
 import com.sparta.springlv2.jwt.JwtUtil;
 import com.sparta.springlv2.repository.UserRepository;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
